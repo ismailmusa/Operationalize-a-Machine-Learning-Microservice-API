@@ -87,3 +87,100 @@ $ . ./make_prediction.sh # Don't forget run the container before
 
 -   Add a prediction log statement
 -   Run the container and make a prediction to check the logs
+
+### 3. Improve Logging & Save Output
+
+-   Add a prediction log statement
+-   Run the container and make a prediction to check the logs
+
+> **Note:** If you don't see any logs on your terminal you can use the `docker logs` command, to get container id of your docker app you can use `docker ps` and used that with the `docker logs` command. e.g: `docker ps` and the container id is `4c01db0b339c` your command to get the logs is `docker logs 4c01db0b339c`
+
+```sh
+$ docker ps
+
+CONTAINER ID        IMAGE                        COMMAND                CREATED              STATUS              PORTS               NAMES
+4c01db0b339c        ubuntu:12.04                 bash                   17 seconds ago       Up 16 seconds       3300-3310/tcp       webapp
+d7886598dbe2        crosbymichael/redis:latest   /redis-server --dir    33 minutes ago       Up 33 minutes       6379/tcp            redis,webapp/db
+```
+
+> **Note:** Don't forget copy the output to `docker_out.txt`
+
+### 4. Upload the Docker Image
+
+-   Create a [Docker Hub](https://hub.docker.com/) account
+-   Built the docker container with this command `docker build --tag=<your_tag> .` **(Don't forget the tag name)**
+-   Define a `dockerpath` which is `<docker_hub_username>/<project_name>` e.g: `minorpath/kubernetes-p4`
+-   Authenticate and tag image
+-   Push your docker image to the `dockerpath`
+
+> Note: replace <your_tag> with the tag name that you want to use. For example: api -> `docker build --tag=api .`
+
+After complete all steps run the upload using the `upload_docker.sh` script:
+
+```sh
+$ . ./upload_docker.sh
+```
+
+### 5. Configure Kubernetes to Run Locally
+
+-   [Install Kubernetes](https://kubernetes.io/docs/tasks/tools/install-kubectl/#install-kubectl-on-linux)
+-   [Install Minikube](https://kubernetes.io/docs/tasks/tools/install-minikube/)
+
+> **Note:** Check the `Workarounds` section for common issues.
+
+### 6. Deploy with Kubernetes and Save Output Logs
+
+-   Define a dockerpath which will be `<docker_hub_username>/<project_name>`, this should be the same name as your uploaded repository (the same as in upload_docker.sh)
+-   Run the docker container with kubectl; you’ll have to specify the container and the port
+-   List the kubernetes pods
+-   Forward the container port to a host port, using the same ports as before
+
+After complete all steps run the kubernetes using `run_kubernetes.sh` script:
+
+```sh
+$ . ./run_kubernetes.sh
+```
+
+After running the kubernete make a prediction using the `make_prediction.sh` script as we do in the [second task](#2-run-container--make-prediction).
+
+> **Note:** Don't forget copy the output to the `kubernetes_out.txt`
+
+### 7. Delete Cluster
+
+If you want to delete the kubernetes cluster just run this command `minikube delete`. You can also stop the kubernetes cluster with this command `minikube stop`
+
+### 8. CircleCI Integration
+
+-   Create a [CircleCI Account](https://circleci.com/) (use your Github account for a better integration)
+-   Create a config using this [template](https://raw.githubusercontent.com/udacity/DevOps_Microservices/master/Lesson-2-Docker-format-containers/class-demos/.circleci/config.yml)
+-   Add a status badge using this template: `[![<github_username>](https://circleci.com/gh/<github_username>/<repository>.svg?style=svg)](https://circleci.com/gh/<github_username>/<repository>)` replace `<github_username>` and `<repository>` with your data. e.g: `[![danilobrinu](https://circleci.com/gh/danilobrinu/udacity-cloud-devops-engineer-project-4.svg?style=svg)](https://circleci.com/gh/danilobrinu/udacity-cloud-devops-engineer-project-4)` and paste on top of your readme file.
+
+## Workarounds
+
+### Minikube
+
+Minikube common issues: `Out of memory` or `No space left on the device`. Change the instance type from `t2.micro` to `t2.medium` and ensure at least 4GB of free space and 2GB of memory on the device. You can all docker images using this command `docker system prune -a` or remove all unused or dangling image with this command `docker system prune`
+
+### Bash scripts
+
+Sometimes you can't run a bash script using this format `./run_docker.sh` but you have some alternative like `bash run_docker.sh` or `. ./run_docker.sh`
+
+> **Note:** This is the same for all scripts (`*.sh`)
+
+### Adding tests
+
+Add `pytest` to the `requirements.txt` file and update the `Makefile` to add this command `python3 -m pytest -vv test_app.py` which is the file that contains the tests for `home` and `predict` endpoints.
+
+### Linting warnings
+
+The warning for logging format interpolation appears when we want to use f-strings but we can disable using W1202. So we need change this command `pylint --disable=R,C,W1203` to `pylint --disable=R,C,W1202`
+
+### Tests on Circle CI
+
+For pytest: https://circleci.com/docs/2.0/collect-test-data/#pytest
+
+### Kubernetes running docker image
+
+Don't use **80** as a port. e.g: `kubectl run app --image=$dockerpath --port=80` you can have some troubles with the forwarding of that port. Use a different port like **8080** e.g: `kubectl run app --image=$dockerpath --port=8080` so now you can forward that port with `kubectl port-forward deployment/app 8080:80`.
+
+> Don't forget update the `make_prediction.sh` script to use the same port as you are using to run the docker app _(with or without kubernetes)_
