@@ -1,4 +1,4 @@
-
+[![CircleCI](https://dl.circleci.com/status-badge/img/gh/ismailmusa/udacity-project-4/tree/main.svg?style=svg)](https://dl.circleci.com/status-badge/redirect/gh/ismailmusa/udacity-project-4/tree/main)
 
 ## Project Overview
 
